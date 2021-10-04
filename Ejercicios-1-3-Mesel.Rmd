@@ -77,11 +77,8 @@ Primeramente vamos a visualizar el ranking de los 5 barrios más caros, según l
 ```{r}
 ggplot(top_5) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
   
-                labs(title = "Precio promedio del m2 en alquiler por barrio en CABA",
-                subtitle = "Precios de alquiler en pesos. Tipo de propiedad: casas y departamentos",
-                caption = "Fuente Properati, marzo 2021",
-                x = "Barrio",
-                y = "Precio Promedio") +
+                labs(title = "Ranking de precio de barrios",
+                caption = "Fuente Properati, marzo 2021") +
                 theme_grey() + 
                 coord_flip()
 ```
