@@ -1,0 +1,93 @@
+---
+title: "Untitled"
+author: "Felipe Mesel"
+date: "3/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(sf)
+```
+
+```{r}
+properati_todo <- read.csv("data/rent_properati_2020_2021.csv",
+                             stringsAsFactors = TRUE,
+                             encoding ="UTF-8",
+                             na.strings=c("","NA"))
+```
+
+```{r}
+dim(properati_todo)
+```
+```{r}
+names(properati_todo)
+```
+```{r}
+summary(properati_todo)
+```
+
+```{r}
+str(properati_todo)
+```
+
+```{r}
+properati_caba <- properati_todo %>%
+            select(l1:l3, lat, lon, bedrooms, surface_total, price, currency, property_type, operation_type)%>%
+            rename(pais = l1, 
+                   provincia = l2, 
+                   barrio = l3,
+                   ambientes = bedrooms,
+                   superficie_total = surface_total, 
+                   precio = price, 
+                   moneda = currency,
+                   tipo_propiedad = property_type,
+                   tipo_operacion = operation_type) %>%
+            filter(provincia == "Capital Federal" & !is.na(barrio) & !is.na(lat) & !is.na(lon) & !is.na(precio) & !is.na(superficie_total) & !is.na(ambientes)) %>%
+            arrange(provincia, barrio, desc(moneda), desc(precio)) %>%
+            mutate(precio_m2 = precio/superficie_total)
+```
+
+```{r}
+resumen_alquiler_barrio <- properati_caba %>%
+                         group_by(barrio) %>%
+                         filter(moneda == "ARS" & tipo_propiedad %in% c("Departamento", "Casa")) %>%
+                         summarise(promedio_m2 = mean(precio_m2)) %>%
+                         arrange(desc(promedio_m2))
+```
+
+```{r}
+ggplot(resumen_alquiler_barrio) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
+                            labs(title = "Precio promedio del m2 en alquiler por barrio en CABA",
+                                 subtitle = "Precios de alquiler en pesos. Tipo de propiedad: casas y departamentos",
+                                 caption = "Fuente Properati, marzo 2021",
+                                 x = "Barrio",
+                                 y = "Precio Promedio") +
+                            theme_grey() + 
+                            coord_flip()
+```
+
+```{r}
+barrios <- st_read("data/barrios_badata.shp")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = barrios)
+```
+
+```{r}
+properati_caba <- st_as_sf(properati_caba,coords=c("lon","lat"), crs=4326)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = barrios)+
+  geom_sf(data=properati_caba, aes(color=precio))+
+  scale_color_viridis_c()
+```
+
