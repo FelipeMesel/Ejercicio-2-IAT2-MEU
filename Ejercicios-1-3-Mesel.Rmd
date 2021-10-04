@@ -49,7 +49,7 @@ properati_caba <- properati_todo %>%
                    moneda = currency,
                    tipo_propiedad = property_type,
                    tipo_operacion = operation_type) %>%
-            filter(provincia == "Capital Federal" & !is.na(barrio) & !is.na(lat) & !is.na(lon) & !is.na(precio) & !is.na(superficie_total) & !is.na(ambientes)) %>%
+                   filter(provincia == "Capital Federal" & moneda == "ARS" & tipo_propiedad %in% c("Departamento", "Casa") & !is.na(barrio) & !is.na(lat) & !is.na(lon) & !is.na(precio) & precio >5000 & precio < 300000 & !is.na(superficie_total) & superficie_total > 18 & superficie_total < 800 &  !is.na(ambientes)) %>%
             arrange(provincia, barrio, desc(moneda), desc(precio)) %>%
             mutate(precio_m2 = precio/superficie_total)
 ```
@@ -57,38 +57,67 @@ properati_caba <- properati_todo %>%
 ```{r}
 resumen_alquiler_barrio <- properati_caba %>%
                          group_by(barrio) %>%
-                         filter(moneda == "ARS" & tipo_propiedad %in% c("Departamento", "Casa")) %>%
                          summarise(promedio_m2 = mean(precio_m2)) %>%
                          arrange(desc(promedio_m2))
 ```
 
 ```{r}
-top_10 <- resumen_alquiler_barrio %>%
-          slice(1:10) %>%
-          rename(Las Cañitas= Las )
+top_5 <- resumen_alquiler_barrio %>%
+          slice(1:5)
 ```
 
 # Ejercicio 3: Visualización.
 
+En este ejercicio realizaremos un gráfico de barras, un gráfico de distribución con puntos y un mapa de la CABA con las ofertas de alquileres. 
+
+## 1. Gráfico de barras.
+
+Primeramente vamos a visualizar el ranking de los 5 barrios más caros, según la base de datos de Properati:
+
 ```{r}
-ggplot(top_10) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
-                            labs(title = "Precio promedio del m2 en alquiler por barrio en CABA",
-                                 subtitle = "Precios de alquiler en pesos. Tipo de propiedad: casas y departamentos",
-                                 caption = "Fuente Properati, marzo 2021",
-                                 x = "Barrio",
-                                 y = "Precio Promedio") +
-                            theme_grey() + 
-                            coord_flip()
+ggplot(top_5) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
+  
+                labs(title = "Precio promedio del m2 en alquiler por barrio en CABA",
+                subtitle = "Precios de alquiler en pesos. Tipo de propiedad: casas y departamentos",
+                caption = "Fuente Properati, marzo 2021",
+                x = "Barrio",
+                y = "Precio Promedio") +
+                theme_grey() + 
+                coord_flip()
 ```
+
+## 2. Gráfico de distribución con regresión lineal
+
+Analizaremos cómo se encuentra dispersa la oferta de inmuebles en alquiler a partir del precio y de la superficie.
+
+```{r}
+properati_caba%>% 
+                  ggplot() + 
+                  geom_point(aes(x = superficie_total, y = precio, color = tipo_propiedad)) +
+                  theme_minimal() +
+                  scale_color_brewer (palette = 1) +
+                  theme(plot.title = element_text(face="bold", size=13)) +
+                  theme(axis.title.x = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) +
+                  theme(axis.title.y = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) + 
+                  theme_minimal() +
+                  labs(title = "Superficie y precio de inmuebles en alquiler- CABA", 
+                  x = "Superficie total (m2)",
+                  y = "Precio en USD",
+                  caption = "fuente: Properati - año 2021") + 
+                  scale_x_continuous(breaks = seq(0, 800, 50)) +
+                  geom_smooth(aes(x=superficie_total, y=precio), method = "lm", colour="dodgerblue4")
+```
+
+
+
+## 3. Mapa de las observaciones.
+
+A continuación haremos un mapa de la Ciudad de Buenos Aires con las ofertas de alquiler geolocalizadas y diferenciadas por precio. A través del mismo podremos ver que la principal concentración de inmuebles en alquiler se encuentra en la región cetral y norte de la ciudad (en donde también pueden verse algunos puntos más claros, que representan precios más elevados), a diferencia del sur en donde hay una menor oferta.
 
 ```{r}
 barrios <- st_read("data/barrios_badata.shp")
 ```
 
-```{r}
-ggplot() +
-  geom_sf(data = barrios)
-```
 
 ```{r}
 properati_caba <- st_as_sf(properati_caba,coords=c("lon","lat"), crs=4326)
@@ -98,6 +127,12 @@ properati_caba <- st_as_sf(properati_caba,coords=c("lon","lat"), crs=4326)
 ggplot() +
   geom_sf(data = barrios)+
   geom_sf(data=properati_caba, aes(color=precio))+
+  theme(plot.title = element_text(face="bold", size=13)) +
+  theme(axis.title.x = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) +
+  theme(axis.title.y = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) + 
+  theme_minimal() +
+  labs(title = "Mapa con las ofertas de inmuebles en alquiler- CABA", 
+  caption = "fuente: Properati - año 2021")
   scale_color_viridis_c()
 ```
 
