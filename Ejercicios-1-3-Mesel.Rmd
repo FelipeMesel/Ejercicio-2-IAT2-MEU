@@ -5,6 +5,8 @@ date: "3/10/2021"
 output: html_document
 ---
 
+# Ejercicio 1: Limpieza y procesamiento de datos.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -61,7 +63,15 @@ resumen_alquiler_barrio <- properati_caba %>%
 ```
 
 ```{r}
-ggplot(resumen_alquiler_barrio) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
+top_10 <- resumen_alquiler_barrio %>%
+          slice(1:10) %>%
+          rename(Las Cañitas= Las )
+```
+
+# Ejercicio 3: Visualización.
+
+```{r}
+ggplot(top_10) + geom_col(aes(x = reorder(barrio, promedio_m2), y = promedio_m2)) +
                             labs(title = "Precio promedio del m2 en alquiler por barrio en CABA",
                                  subtitle = "Precios de alquiler en pesos. Tipo de propiedad: casas y departamentos",
                                  caption = "Fuente Properati, marzo 2021",
