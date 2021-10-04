@@ -124,10 +124,6 @@ properati_caba <- st_as_sf(properati_caba,coords=c("lon","lat"), crs=4326)
 ggplot() +
   geom_sf(data = barrios)+
   geom_sf(data=properati_caba, aes(color=precio))+
-  theme(plot.title = element_text(face="bold", size=13)) +
-  theme(axis.title.x = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) +
-  theme(axis.title.y = element_text(face="bold", vjust=-0.5, colour="firebrick", size=12)) + 
-  theme_minimal() +
   labs(title = "Mapa con las ofertas de inmuebles en alquiler- CABA", 
   caption = "fuente: Properati - año 2021")
   scale_color_viridis_c()
